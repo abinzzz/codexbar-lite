@@ -13,7 +13,7 @@
 
 ## 安装
 
-要求：macOS 13 或更新版本、SwiftBar、已使用 ChatGPT 账户登录的 Codex CLI。源码构建需要 Apple Command Line Tools（`xcode-select --install`）或 Xcode，以及 Python 3.10+。Homebrew 负责安装 Python 依赖。
+要求：Apple Silicon（M 系列）Mac、macOS 13 或更新版本、SwiftBar、已使用 ChatGPT 账户登录的 Codex CLI。源码构建需要 Apple Command Line Tools（`xcode-select --install`）或 Xcode，以及 Python 3.10+。Homebrew 负责安装 Python 依赖。
 
 ### Homebrew
 
@@ -66,7 +66,7 @@ codexbar-lite --version
 
 ### 自定义 Codex 路径
 
-支持 Apple Silicon、Intel Homebrew 及 PATH 中的 Codex。自定义安装位置可用：
+支持 Apple Silicon Homebrew 及 PATH 中的 Codex；不支持 Intel Mac。自定义安装位置可用：
 
 ```sh
 codexbar-lite setup --codex /absolute/path/to/codex
@@ -111,7 +111,7 @@ Codexbar Lite 通过本机 `codex app-server --stdio` 的 `account/rateLimits/re
 make check
 ```
 
-测试使用伪 app-server，无需登录；涵盖协议分包、超时、EOF、账户错误、额度解析及插件安装保护。GitHub CI 配置覆盖 Apple Silicon 与 Intel macOS；CI 结果以实际仓库运行记录为准。
+测试使用伪 app-server，无需登录；涵盖协议分包、超时、EOF、账户错误、额度解析及插件安装保护。GitHub CI 配置仅覆盖 Apple Silicon macOS；CI 结果以实际仓库运行记录为准。
 
 详见 [发布指南](docs/RELEASING.md)、[架构说明](docs/ARCHITECTURE.md) 和 [变更日志](CHANGELOG.md)。MIT License。
 

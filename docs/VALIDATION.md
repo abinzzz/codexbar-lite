@@ -7,4 +7,4 @@
 - Homebrew：Formula Ruby 语法通过，Homebrew Formulary 成功加载 v0.1.0。
 - 发布包：仅含明确列出的源码、文档和演示图，不含构建缓存、个人路径或认证文件。
 
-仍需发布后验证：GitHub Actions 的两种架构运行记录、公开 Release 下载，以及通过公开 Tap 的完整 `brew install` / `brew test`。本地通过不等于这些远端步骤已经执行。
+仍需发布后验证：GitHub Actions 的 Apple Silicon 运行记录、公开 Release 下载，以及通过公开 Tap 的完整 `brew install` / `brew test`。本地通过不等于这些远端步骤已经执行。

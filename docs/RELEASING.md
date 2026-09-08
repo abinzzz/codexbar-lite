@@ -58,7 +58,7 @@ codexbar-lite doctor
 
 Formula 不在 Homebrew 安装阶段自动修改用户的 SwiftBar 设置。用户通过 `codexbar-lite setup` 完成启用。
 
-这是从源码构建的 Formula，首次安装需要 Apple 开发工具。没有预编译 bottle，也不需要把未经签名的可执行文件作为下载产物发布。
+仅支持 Apple Silicon（M 系列）Mac。这是从源码构建的 Formula，首次安装需要 Apple 开发工具。没有预编译 bottle，也不需要把未经签名的可执行文件作为下载产物发布。
 
 ## 手动生成发布产物
 
