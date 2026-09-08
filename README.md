@@ -1,120 +1,102 @@
-# Codexbar Lite
+<h1 align="center">Codexbar Lite</h1>
 
-See your remaining Codex quota at a glance in the macOS menu bar.
+<p align="center">Your Codex quota. A glance away.</p>
 
-A compact, two-row SwiftBar plugin with native system typography, rounded progress bars, and remaining percentages. Supports **Apple Silicon (M-series) Macs** and monitors Codex account limits. SwiftBar handles refreshes; no separate background daemon is required.
+<p align="center">
+  <a href="https://github.com/abinzzz/codexbar-lite/releases/latest"><img src="https://img.shields.io/github/v/release/abinzzz/codexbar-lite?style=flat&color=343b43" alt="Latest release"></a>
+  <a href="https://github.com/abinzzz/codexbar-lite/actions/workflows/ci.yml"><img src="https://github.com/abinzzz/codexbar-lite/actions/workflows/ci.yml/badge.svg" alt="Build and tests"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-343b43?style=flat" alt="MIT license"></a>
+</p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
-  <img src="docs/preview-light.png" width="240" alt="Demo: Codex 5h 52%, 7d 42% remaining">
-</picture>
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="docs/USAGE.md">User guide</a> ·
+  <a href="https://github.com/abinzzz/codexbar-lite/releases">Releases</a>
+</p>
 
-*This synthetic preview is shown at 3x size. The menu bar item is 80 × 22 pt and contains no personal account data.*
+<br>
 
-## Installation
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
+    <img src="docs/preview-light.png" width="240" alt="Codex quota preview: 5h 52% and 7d 42% remaining">
+  </picture>
+</p>
 
-Requires an Apple Silicon Mac, macOS 13 or later, SwiftBar, and the Codex CLI signed in with a supported ChatGPT account. Source builds require Apple Command Line Tools (`xcode-select --install`) or Xcode, plus Python 3.10 or later. Homebrew installs the Python dependency.
+<p align="center"><sub>Native macOS typography. Light and dark appearances.<br>Synthetic preview at 3× size; the menu bar item is 80 × 22 pt.</sub></p>
 
-### Homebrew
+<br>
+
+A small [SwiftBar](https://github.com/swiftbar/SwiftBar) plugin that keeps your remaining Codex quota in the menu bar. Built for **Apple Silicon Macs running macOS 13 or later**.
+
+- **Know what's left.** Remaining percentages, compact progress bars, and local reset times.
+- **Use your existing login.** Connects through the Codex CLI; no separate API key or backend.
+- **Keep it simple.** Refreshes every minute. Missing data stays unknown, and setup preserves your other plugins.
+
+## Install
+
+With SwiftBar configured and Codex signed in:
 
 ```sh
-brew install --cask swiftbar codex
 brew install abinzzz/codexbar-lite/codexbar-lite
-codex login
-open -a SwiftBar
-# Choose a plugin directory when SwiftBar first opens.
 codexbar-lite setup
 ```
 
-You can reuse an existing SwiftBar installation and Codex login. `setup` reads your configured SwiftBar plugin directory and installs `codexbar-lite.1m.sh`. Other plugins and SwiftBar preferences are preserved.
+Requires current Apple Command Line Tools or Xcode. Homebrew installs Python for you.
 
-To choose a directory explicitly:
+<details>
+<summary>First time using SwiftBar or Codex?</summary>
 
 ```sh
-codexbar-lite setup --plugin-dir "$HOME/SwiftBar Plugins"
+brew install --cask swiftbar codex
+codex login
+open -a SwiftBar
 ```
 
-Select the same directory in SwiftBar. The plugin refreshes every minute.
+Choose a plugin directory when SwiftBar opens, then run the installation commands above. Use a ChatGPT account that supports Codex quota queries.
 
-Source: [abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite). Tap: [abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite).
+</details>
 
-### From source
+<details>
+<summary>Prefer installing from source?</summary>
 
-Run these commands from the project root:
+From the project root, with Python 3.10 or later and Apple development tools installed:
 
 ```sh
 python3 tools/install.py --prefix "$HOME/.local"
 "$HOME/.local/bin/codexbar-lite" setup
 ```
 
-Add `$HOME/.local/bin` to your shell's `PATH` to use the command by name. The generated plugin uses absolute paths and does not depend on SwiftBar loading your shell configuration.
+</details>
 
-## Usage
+## Everyday commands
 
-```sh
-codexbar-lite status        # Fetch current limits as JSON.
-codexbar-lite doctor        # Check local dependencies without fetching limits.
-codexbar-lite doctor --live # Also verify a live quota request.
-codexbar-lite menu --demo   # Preview synthetic data without signing in.
-codexbar-lite --version
-```
+| Command | What it does |
+| :--- | :--- |
+| `codexbar-lite status` | Fetch remaining quota as JSON. |
+| `codexbar-lite doctor --live` | Check local dependencies and account access. |
+| `codexbar-lite menu --demo` | Render a sample without signing in. |
+| `brew upgrade codexbar-lite` | Install the latest version. |
 
-- Percentages represent **remaining** quota: `100 − usedPercent`, rounded to an integer.
-- Green means more than 60% remaining; orange means 20%–60%; red means below 20%.
-- The five segments approximate the nearest 20% increment. Nonzero quota lights at least one segment; the percentage provides the precise displayed value.
-- Window labels follow the durations returned by the service. Missing windows show `--%`.
-- The dropdown shows reset times in your local time zone. Limits are shared across your Codex account.
-- The plugin follows SwiftBar's light or dark appearance and falls back to text if image rendering fails.
-
-### Custom Codex location
-
-The CLI searches your `PATH` and common Homebrew locations. Intel Macs are not supported. For a custom installation:
+To remove the plugin and package:
 
 ```sh
-codexbar-lite setup --codex /absolute/path/to/codex
-codexbar-lite status --codex /absolute/path/to/codex
-```
-
-`setup` saves the detected Codex path in its plugin script. Run it again if you move your Codex installation. Terminal commands also accept the `CODEXBAR_CODEX` environment variable.
-
-## Upgrade and uninstall
-
-```sh
-brew upgrade codexbar-lite
-# No additional setup is needed: the plugin uses Homebrew's stable opt path.
-
 codexbar-lite uninstall
 brew uninstall codexbar-lite
 ```
 
-For source installations, rerun the original installation command to upgrade. Use `codexbar-lite uninstall` to remove the menu bar plugin. If you installed into a dedicated prefix, you may also remove that dedicated directory. Uninstall only removes the plugin managed by this project; Codex, SwiftBar, and account data remain available.
+For custom paths, quota colors, and troubleshooting, see the [user guide](docs/USAGE.md).
 
-## Privacy and compatibility
+## Under the hood
 
-Codexbar Lite calls `account/rateLimits/read` through the local `codex app-server --stdio` process and reuses your existing Codex login. It does not directly read or copy authentication files, require an API key, operate a separate backend, or send analytics. The Codex CLI itself connects to its account service, so quota requests require network access.
+Python's standard library handles the local Codex app-server connection. A small Swift/AppKit renderer draws the menu bar image. SwiftBar handles scheduling.
 
-This is an independent community project, unaffiliated with OpenAI, SwiftBar, or similarly named projects. Compatibility depends on the Codex app-server interface and may change with future CLI versions. API-key-only authentication may not provide subscription quota windows. Unavailable data is shown as unknown rather than exhausted quota.
+The plugin reuses your Codex CLI login and makes no direct reads of authentication files. It sends no analytics. The Codex CLI connects to its account service to fetch limits.
 
-References: [Codex App Server](https://developers.openai.com/codex/app-server) and [Homebrew Formula Cookbook](https://docs.brew.sh/Formula-Cookbook).
+[Architecture](docs/ARCHITECTURE.md) · [Validation](docs/VALIDATION.md) · [Release guide](docs/RELEASING.md) · [Changelog](CHANGELOG.md)
 
-## Troubleshooting
+Run `make check` to build and test on an Apple Silicon Mac. Tests use a fake app-server and require no login.
 
-**The plugin is missing:** Check that SwiftBar is running, the plugin directories match, and macOS allows SwiftBar in the menu bar. Wait for the next refresh or refresh manually in SwiftBar.
+---
 
-**Usage unavailable:** Run `codexbar-lite doctor --live`. Check your account with `codex login` and update the Codex CLI. Do not post authentication files or access tokens in GitHub issues.
-
-**Duplicate indicators:** When migrating from the original manual plugin, disable `chatgpt-usage.1m.py` in SwiftBar. Setup does not remove that older plugin automatically.
-
-**Build errors:** Install Apple development tools with `xcode-select --install`, then rebuild. If Homebrew reports an outdated Xcode installation, update that Xcode. Selecting Command Line Tools alone may not satisfy Homebrew's environment checks.
-
-## Development and releases
-
-```sh
-make check
-```
-
-Tests use a fake app-server and require no login. Coverage includes fragmented protocol messages, timeouts, EOF, account errors, quota parsing, safe plugin installation, and image rendering. CI runs on Apple Silicon macOS.
-
-The public tap's installation, `brew test`, and setup/uninstall flow passed on a [clean M1 runner](https://github.com/abinzzz/codexbar-lite/actions/runs/34242162970). See the [validation record](docs/VALIDATION.md) for the versions and environments covered.
-
-Read the [release guide](docs/RELEASING.md), [architecture](docs/ARCHITECTURE.md), and [changelog](CHANGELOG.md). Licensed under the [MIT License](LICENSE).
+[MIT licensed](LICENSE). An independent community project, unaffiliated with OpenAI or SwiftBar.
