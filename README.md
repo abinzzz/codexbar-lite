@@ -103,7 +103,7 @@ Codexbar Lite 通过本机 `codex app-server --stdio` 的 `account/rateLimits/re
 
 **出现两个组件**：从旧的手工版本迁移时，先在 SwiftBar 禁用旧的 `chatgpt-usage.1m.py`。本工具不会自动删除旧插件。
 
-**构建报错**：运行 `xcode-select --install` 安装 Apple 开发工具，安装完成后重新构建。
+**构建报错**：运行 `xcode-select --install` 安装 Apple 开发工具，安装完成后重新构建。若 Homebrew 明确提示已安装的 Xcode 过旧，需要更新该 Xcode；仅切换 Command Line Tools 可能无法通过 Homebrew 的环境检查。
 
 ## 开发与发布
 
@@ -112,6 +112,8 @@ make check
 ```
 
 测试使用伪 app-server，无需登录；涵盖协议分包、超时、EOF、账户错误、额度解析及插件安装保护。GitHub CI 配置仅覆盖 Apple Silicon macOS；CI 结果以实际仓库运行记录为准。
+
+公开 Tap 的安装、`brew test` 和 setup/uninstall 已在 [干净 M1 环境通过验证](https://github.com/abinzzz/codexbar-lite/actions/runs/34242162970)。
 
 详见 [发布指南](docs/RELEASING.md)、[架构说明](docs/ARCHITECTURE.md) 和 [变更日志](CHANGELOG.md)。MIT License。
 
