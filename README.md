@@ -17,7 +17,7 @@
 
 ### Homebrew
 
-源码仓库：[abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite)。Homebrew Tap：[abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite)。以下命令在首个 Release 和 Tap 发布后可用：
+源码仓库：[abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite)。Homebrew Tap：[abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite)。安装命令：
 
 ```sh
 brew install --cask swiftbar codex
@@ -36,7 +36,7 @@ codexbar-lite setup --plugin-dir "$HOME/SwiftBar Plugins"
 
 指定目录后，请在 SwiftBar 中选择同一目录。菜单栏每分钟刷新一次。
 
-### 从源码安装（现在即可使用）
+### 从源码安装
 
 在本项目根目录运行：
 
@@ -117,4 +117,4 @@ make check
 
 ---
 
-**English:** A lightweight Codex quota indicator for the macOS menu bar, powered by SwiftBar. Shows remaining quota with native system typography and compact progress bars. Uses your existing Codex CLI login; no API key or separate backend. Build with `make check`, install with `python3 tools/install.py --prefix "$HOME/.local"`, then run `~/.local/bin/codexbar-lite setup`. Homebrew installation becomes available after the maintainer publishes the tap described in the release guide.
+**English:** A lightweight Codex quota indicator for the macOS menu bar, powered by SwiftBar. Shows remaining quota with native system typography and compact progress bars. Uses your existing Codex CLI login; no API key or separate backend. Build with `make check`, install with `python3 tools/install.py --prefix "$HOME/.local"`, then run `~/.local/bin/codexbar-lite setup`. Install with Homebrew: `brew install abinzzz/codexbar-lite/codexbar-lite`. Supports Apple Silicon (M-series) Macs only.

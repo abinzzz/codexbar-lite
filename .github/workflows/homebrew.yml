@@ -1,0 +1,26 @@
+name: Homebrew installation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  install:
+    runs-on: macos-14
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    steps:
+      - name: Install from public tap and release
+        run: brew install abinzzz/codexbar-lite/codexbar-lite
+      - name: Test installed formula
+        run: |
+          brew test abinzzz/codexbar-lite/codexbar-lite
+          codexbar-lite --version
+          file "$(brew --prefix codexbar-lite)/libexec/usage-renderer" | tee /tmp/codexbar-architecture
+          grep -q arm64 /tmp/codexbar-architecture
+      - name: Verify isolated SwiftBar setup and uninstall
+        run: |
+          codexbar-lite setup --plugin-dir "$RUNNER_TEMP/SwiftBar Plugins" --codex /usr/bin/true
+          test -x "$RUNNER_TEMP/SwiftBar Plugins/codexbar-lite.1m.sh"
+          codexbar-lite uninstall --plugin-dir "$RUNNER_TEMP/SwiftBar Plugins"
+          test ! -e "$RUNNER_TEMP/SwiftBar Plugins/codexbar-lite.1m.sh"
