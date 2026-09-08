@@ -15,13 +15,13 @@
 
 要求：macOS 13 或更新版本、SwiftBar、已使用 ChatGPT 账户登录的 Codex CLI。源码构建需要 Apple Command Line Tools（`xcode-select --install`）或 Xcode，以及 Python 3.10+。Homebrew 负责安装 Python 依赖。
 
-### Homebrew（仓库发布后）
+### Homebrew
 
-本目录目前是发布前源码，Homebrew Tap 尚未上线。维护者完成 [发布步骤](docs/RELEASING.md) 后，将下面的 `OWNER` 替换为实际 GitHub 用户名：
+源码仓库：[abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite)。Homebrew Tap：[abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite)。以下命令在首个 Release 和 Tap 发布后可用：
 
 ```sh
 brew install --cask swiftbar codex
-brew install OWNER/codexbar-lite/codexbar-lite
+brew install abinzzz/codexbar-lite/codexbar-lite
 codex login
 open -a SwiftBar
 # 首次打开 SwiftBar 时，选择一个插件目录
