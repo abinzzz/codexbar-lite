@@ -194,9 +194,10 @@ def setup(directory, launcher, codex=None):
     args = [str(launcher), "menu"]
     if codex:
         args += ["--codex", codex]
+    search_path = (str(Path(codex).parent) + ":" if codex else "") + "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
     body = ("#!/bin/sh\n" + MARKER + "\n# <swiftbar.title>Codexbar Lite</swiftbar.title>\n"
             "# <swiftbar.version>" + VERSION + "</swiftbar.version>\n"
-            "export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin\nexec " + shlex.join(args) + "\n")
+            "export PATH=" + shlex.quote(search_path) + ":\"$PATH\"\nexec " + shlex.join(args) + "\n")
     fd, temporary = tempfile.mkstemp(prefix=".codexbar-", dir=directory)
     try:
         with os.fdopen(fd, "w") as stream:
