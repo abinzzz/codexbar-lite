@@ -1,122 +1,120 @@
 # Codexbar Lite
 
-在 macOS 菜单栏里，看一眼 Codex 还剩多少额度。
+See your remaining Codex quota at a glance in the macOS menu bar.
 
-双行显示短周期和周额度，使用平滑系统字体、圆角进度条和百分比。仅显示 **Codex** 额度，不含余额网关、其他模型或付费 API 账单。通过 SwiftBar 运行，无独立后台守护进程。
+A compact, two-row SwiftBar plugin with native system typography, rounded progress bars, and remaining percentages. Supports **Apple Silicon (M-series) Macs** and monitors Codex account limits. SwiftBar handles refreshes; no separate background daemon is required.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
   <img src="docs/preview-light.png" width="240" alt="Demo: Codex 5h 52%, 7d 42% remaining">
 </picture>
 
-*上图为放大 3 倍的合成演示，实际菜单栏显示为 80 × 22 pt；不含个人账户数据。*
+*This synthetic preview is shown at 3x size. The menu bar item is 80 × 22 pt and contains no personal account data.*
 
-## 安装
+## Installation
 
-要求：Apple Silicon（M 系列）Mac、macOS 13 或更新版本、SwiftBar、已使用 ChatGPT 账户登录的 Codex CLI。源码构建需要 Apple Command Line Tools（`xcode-select --install`）或 Xcode，以及 Python 3.10+。Homebrew 负责安装 Python 依赖。
+Requires an Apple Silicon Mac, macOS 13 or later, SwiftBar, and the Codex CLI signed in with a supported ChatGPT account. Source builds require Apple Command Line Tools (`xcode-select --install`) or Xcode, plus Python 3.10 or later. Homebrew installs the Python dependency.
 
 ### Homebrew
-
-源码仓库：[abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite)。Homebrew Tap：[abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite)。安装命令：
 
 ```sh
 brew install --cask swiftbar codex
 brew install abinzzz/codexbar-lite/codexbar-lite
 codex login
 open -a SwiftBar
-# 首次打开 SwiftBar 时，选择一个插件目录
+# Choose a plugin directory when SwiftBar first opens.
 codexbar-lite setup
 ```
 
-已安装且已登录的 Codex 可以直接使用。`setup` 会读取 SwiftBar 已配置的插件目录，只写入自己的 `codexbar-lite.1m.sh`，不会更改其他插件或 SwiftBar 偏好。也可显式指定：
+You can reuse an existing SwiftBar installation and Codex login. `setup` reads your configured SwiftBar plugin directory and installs `codexbar-lite.1m.sh`. Other plugins and SwiftBar preferences are preserved.
+
+To choose a directory explicitly:
 
 ```sh
 codexbar-lite setup --plugin-dir "$HOME/SwiftBar Plugins"
 ```
 
-指定目录后，请在 SwiftBar 中选择同一目录。菜单栏每分钟刷新一次。
+Select the same directory in SwiftBar. The plugin refreshes every minute.
 
-### 从源码安装
+Source: [abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite). Tap: [abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite).
 
-在本项目根目录运行：
+### From source
+
+Run these commands from the project root:
 
 ```sh
 python3 tools/install.py --prefix "$HOME/.local"
 "$HOME/.local/bin/codexbar-lite" setup
 ```
 
-如需直接使用命令名，将 `$HOME/.local/bin` 加入 shell 的 `PATH`。构建出的插件启动脚本使用绝对路径，不依赖 SwiftBar 的 shell 初始化文件。
+Add `$HOME/.local/bin` to your shell's `PATH` to use the command by name. The generated plugin uses absolute paths and does not depend on SwiftBar loading your shell configuration.
 
-## 使用
+## Usage
 
 ```sh
-codexbar-lite status        # 请求当前额度，输出 JSON
-codexbar-lite doctor        # 检查本地 Codex 与图片渲染器，不请求账户额度
-codexbar-lite doctor --live # 额外验证真实额度读取
-codexbar-lite menu --demo   # 使用合成数据预览，无需登录
+codexbar-lite status        # Fetch current limits as JSON.
+codexbar-lite doctor        # Check local dependencies without fetching limits.
+codexbar-lite doctor --live # Also verify a live quota request.
+codexbar-lite menu --demo   # Preview synthetic data without signing in.
 codexbar-lite --version
 ```
 
-- 文字显示**剩余**比例：`100 − usedPercent`；按整数四舍五入。
-- 绿色：剩余超过 60%；橙色：20%–60%；红色：低于 20%。
-- 五个短柱是近似值，按最近的 20% 档位显示；非零额度至少亮一格，具体数值以百分比为准。
-- 额度窗口名称使用服务返回的时长，不强制把所有账户标成 5h / 7d。缺失窗口显示 `--%`。
-- 菜单显示重置时间及本地时区。额度属于账户，并非当前会话单独的额度。
-- 自动适配 SwiftBar 提供的浅色/深色外观；图片渲染失败时退回文字显示。
+- Percentages represent **remaining** quota: `100 − usedPercent`, rounded to an integer.
+- Green means more than 60% remaining; orange means 20%–60%; red means below 20%.
+- The five segments approximate the nearest 20% increment. Nonzero quota lights at least one segment; the percentage provides the precise displayed value.
+- Window labels follow the durations returned by the service. Missing windows show `--%`.
+- The dropdown shows reset times in your local time zone. Limits are shared across your Codex account.
+- The plugin follows SwiftBar's light or dark appearance and falls back to text if image rendering fails.
 
-### 自定义 Codex 路径
+### Custom Codex location
 
-支持 Apple Silicon Homebrew 及 PATH 中的 Codex；不支持 Intel Mac。自定义安装位置可用：
+The CLI searches your `PATH` and common Homebrew locations. Intel Macs are not supported. For a custom installation:
 
 ```sh
 codexbar-lite setup --codex /absolute/path/to/codex
 codexbar-lite status --codex /absolute/path/to/codex
 ```
 
-`setup` 将当时找到的 Codex 路径保存到自己的插件脚本。之后如果移动 Codex 安装位置，重新运行 `setup`。终端命令也可用 `CODEXBAR_CODEX` 环境变量。
+`setup` saves the detected Codex path in its plugin script. Run it again if you move your Codex installation. Terminal commands also accept the `CODEXBAR_CODEX` environment variable.
 
-## 升级与卸载
+## Upgrade and uninstall
 
 ```sh
 brew upgrade codexbar-lite
-# 无需重新 setup：插件指向 Homebrew 的稳定 opt 路径
+# No additional setup is needed: the plugin uses Homebrew's stable opt path.
 
 codexbar-lite uninstall
 brew uninstall codexbar-lite
 ```
 
-源码安装：再次执行相同的安装命令即可升级。移除菜单栏插件使用 `codexbar-lite uninstall`；若安装到专用前缀，还可自行移除该专用目录。`uninstall` 只删除带本项目标记的插件，不移除 Codex、SwiftBar 或账户数据。
+For source installations, rerun the original installation command to upgrade. Use `codexbar-lite uninstall` to remove the menu bar plugin. If you installed into a dedicated prefix, you may also remove that dedicated directory. Uninstall only removes the plugin managed by this project; Codex, SwiftBar, and account data remain available.
 
-## 隐私和兼容性
+## Privacy and compatibility
 
-Codexbar Lite 通过本机 `codex app-server --stdio` 的 `account/rateLimits/read` 读取额度，复用 Codex 登录状态，不读取或复制认证文件，不要求 API key，不自建服务器，不发送分析数据。Codex CLI 自身会连接其账户服务；这不是离线额度查询。
+Codexbar Lite calls `account/rateLimits/read` through the local `codex app-server --stdio` process and reuses your existing Codex login. It does not directly read or copy authentication files, require an API key, operate a separate backend, or send analytics. The Codex CLI itself connects to its account service, so quota requests require network access.
 
-这是独立的社区工具，与 OpenAI、SwiftBar 及其他同名/近似名称项目没有隶属关系。依赖 Codex app-server 接口，后续 CLI 升级可能改变兼容性。API-key-only 登录不保证提供 ChatGPT/Codex 订阅窗口。缺失或失败不会显示成“额度已用尽”。
+This is an independent community project, unaffiliated with OpenAI, SwiftBar, or similarly named projects. Compatibility depends on the Codex app-server interface and may change with future CLI versions. API-key-only authentication may not provide subscription quota windows. Unavailable data is shown as unknown rather than exhausted quota.
 
-接口依据：[Codex App Server 文档](https://developers.openai.com/codex/app-server)。安装格式依据：[Homebrew Formula Cookbook](https://docs.brew.sh/Formula-Cookbook)。
+References: [Codex App Server](https://developers.openai.com/codex/app-server) and [Homebrew Formula Cookbook](https://docs.brew.sh/Formula-Cookbook).
 
-## 常见问题
+## Troubleshooting
 
-**没有看到组件**：确认 SwiftBar 正在运行，插件目录一致，且 macOS 允许 SwiftBar 出现在菜单栏。等待下一分钟刷新，或在 SwiftBar 中手动刷新。
+**The plugin is missing:** Check that SwiftBar is running, the plugin directories match, and macOS allows SwiftBar in the menu bar. Wait for the next refresh or refresh manually in SwiftBar.
 
-**Usage unavailable**：先运行 `codexbar-lite doctor --live`。确认 `codex login` 使用了支持额度查询的账户，并更新 Codex CLI。不要在 GitHub Issue 中粘贴认证文件或 access token。
+**Usage unavailable:** Run `codexbar-lite doctor --live`. Check your account with `codex login` and update the Codex CLI. Do not post authentication files or access tokens in GitHub issues.
 
-**出现两个组件**：从旧的手工版本迁移时，先在 SwiftBar 禁用旧的 `chatgpt-usage.1m.py`。本工具不会自动删除旧插件。
+**Duplicate indicators:** When migrating from the original manual plugin, disable `chatgpt-usage.1m.py` in SwiftBar. Setup does not remove that older plugin automatically.
 
-**构建报错**：运行 `xcode-select --install` 安装 Apple 开发工具，安装完成后重新构建。若 Homebrew 明确提示已安装的 Xcode 过旧，需要更新该 Xcode；仅切换 Command Line Tools 可能无法通过 Homebrew 的环境检查。
+**Build errors:** Install Apple development tools with `xcode-select --install`, then rebuild. If Homebrew reports an outdated Xcode installation, update that Xcode. Selecting Command Line Tools alone may not satisfy Homebrew's environment checks.
 
-## 开发与发布
+## Development and releases
 
 ```sh
 make check
 ```
 
-测试使用伪 app-server，无需登录；涵盖协议分包、超时、EOF、账户错误、额度解析及插件安装保护。GitHub CI 配置仅覆盖 Apple Silicon macOS；CI 结果以实际仓库运行记录为准。
+Tests use a fake app-server and require no login. Coverage includes fragmented protocol messages, timeouts, EOF, account errors, quota parsing, safe plugin installation, and image rendering. CI runs on Apple Silicon macOS.
 
-公开 Tap 的安装、`brew test` 和 setup/uninstall 已在 [干净 M1 环境通过验证](https://github.com/abinzzz/codexbar-lite/actions/runs/34242162970)。
+The public tap's installation, `brew test`, and setup/uninstall flow passed on a [clean M1 runner](https://github.com/abinzzz/codexbar-lite/actions/runs/34242162970). See the [validation record](docs/VALIDATION.md) for the versions and environments covered.
 
-详见 [发布指南](docs/RELEASING.md)、[架构说明](docs/ARCHITECTURE.md) 和 [变更日志](CHANGELOG.md)。MIT License。
-
----
-
-**English:** A lightweight Codex quota indicator for the macOS menu bar, powered by SwiftBar. Shows remaining quota with native system typography and compact progress bars. Uses your existing Codex CLI login; no API key or separate backend. Build with `make check`, install with `python3 tools/install.py --prefix "$HOME/.local"`, then run `~/.local/bin/codexbar-lite setup`. Install with Homebrew: `brew install abinzzz/codexbar-lite/codexbar-lite`. Supports Apple Silicon (M-series) Macs only.
+Read the [release guide](docs/RELEASING.md), [architecture](docs/ARCHITECTURE.md), and [changelog](CHANGELOG.md). Licensed under the [MIT License](LICENSE).

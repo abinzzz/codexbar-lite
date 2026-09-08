@@ -14,7 +14,7 @@ import sys
 import tempfile
 import time
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 PLUGIN = "codexbar-lite.1m.sh"
 MARKER = "# Managed by codexbar-lite"
 ROOT = Path(__file__).resolve().parent

@@ -1,4 +1,4 @@
-# 架构
+# Architecture
 
 ```text
 SwiftBar (every 1 minute)
@@ -9,12 +9,14 @@ SwiftBar (every 1 minute)
   → AppKit PNG renderer → SwiftBar menu
 ```
 
-Python 仅使用标准库。Swift/AppKit 渲染器在安装时编译，刷新时无需启动编译器。每次查询最多等待 15 秒，渲染最多 5 秒；子进程会被回收，不保留持久连接或本地额度缓存。
+Python uses only the standard library. The Swift/AppKit renderer is compiled during installation, so refreshes do not invoke the compiler. Each quota request has a 15-second timeout; rendering has a 5-second timeout. Child processes are reaped, and the client keeps no persistent connection or local quota cache.
 
-JSON-RPC 使用 initialize → initialized → account/rateLimits/read。读取端按字节缓存和换行解析，避免 `readline()` 在半行上无限等待；既支持分包，也支持一次写入多行。多额度桶优先选择 codex；不会拿其他产品的桶作为后备。
+The JSON-RPC sequence is `initialize` → `initialized` → `account/rateLimits/read`. The reader buffers bytes and splits complete lines, avoiding an unbounded `readline()` wait on a partial message. It handles both fragmented messages and multiple lines in one read. For multi-bucket responses, it selects the `codex` bucket and does not substitute another product's limits.
 
-插件名称固定为 `codexbar-lite.1m.sh`。setup 通过临时文件原子替换自己的脚本，并拒绝覆盖无标记文件或符号链接。安装过程不扫描或上传其他插件。Homebrew wrapper 的 opt 路径保持稳定，Cellar 内的 Python 模块随版本更新。
+The plugin filename is `codexbar-lite.1m.sh`. Setup atomically replaces its own script through a temporary file and refuses to overwrite unmarked files or symbolic links. Installation does not scan or upload other plugins. The Homebrew launcher's `opt` path remains stable while the Python module in the Cellar changes with each version.
 
-额度中的缺失值保持未知；窗口名称根据返回时长生成。`5h`/`7d` 只在没有窗口时作为布局占位。文字错误状态与“额度为零”分开。
+Missing quota values remain unknown. Window labels use the returned durations; `5h` and `7d` serve as fallback labels when durations are unavailable. Error output is distinct from zero remaining quota.
 
-菜单栏 PNG 为透明 240 × 66 像素，以 80 × 22 pt 显示。SF 字体约 10pt；100% 为避免裁切略缩小。未点亮短柱随浅色/深色外观调整透明度。
+The menu bar image is a transparent 240 × 66-pixel PNG displayed at 80 × 22 pt. The system font is approximately 10 pt; `100%` uses a slightly smaller size to prevent clipping. Empty segments adjust their color and opacity for light and dark appearances.
+
+Only Apple Silicon Macs are supported. The installer requires a native ARM64 environment and compiles the renderer for `arm64-apple-macos13.0`.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Standardize the README, architecture, release guide, and validation record in English.
+- Publish an English-only source archive and update the Homebrew release.
+
 ## 0.1.0
 
 - Codex-only quota monitoring through the local app-server.

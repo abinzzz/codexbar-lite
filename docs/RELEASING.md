@@ -1,76 +1,85 @@
-# 发布到 GitHub 和 Homebrew
+# Publishing to GitHub and Homebrew
 
-使用两个公开仓库：
+The project uses two public repositories:
 
-- `abinzzz/codexbar-lite`：本目录的源码、Issues、版本及 GitHub Actions。
-- `abinzzz/homebrew-codexbar-lite`：只存放 `Formula/codexbar-lite.rb`，供 Homebrew Tap 使用。
+- [abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite): source, documentation, issues, releases, and GitHub Actions.
+- [abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite): the Homebrew formula and tap documentation.
 
-项目未进入 homebrew/core，因此第一版的完整安装命令为 `brew install abinzzz/codexbar-lite/codexbar-lite`。用户安装过 Tap 后可用 `brew install codexbar-lite`。
+The full installation command is `brew install abinzzz/codexbar-lite/codexbar-lite`. Once the tap is installed, users can run `brew install codexbar-lite`. This project is not part of homebrew/core.
 
-## 1. 创建源码仓库
+## Prepare a release
 
-发布账号为 `abinzzz`。检查 README、LICENSE 和仓库可见性，然后在本目录执行：
+Both repositories already exist. In the source repository:
+
+1. Update `VERSION` in `src/codexbar.py` and add a changelog entry.
+2. Run `make check`, commit the changes, and push `main`.
+3. Wait for the Apple Silicon CI run to succeed.
+4. Create and push a new tag matching `VERSION`.
+
+For example, to publish version 0.1.1:
 
 ```sh
-gh auth login
-git init -b main
-git add .
-git commit -m "Initial Codexbar Lite release"
-gh repo create abinzzz/codexbar-lite --public --source . --remote origin --push
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
-README 已使用 `abinzzz`；首次发布完成后确认安装命令可用。不要把 `.build`、真实限额响应或本机认证文件添加到仓库。
+Never reuse a published tag or replace an existing release archive. Doing so would invalidate the checksum in an already published Homebrew formula.
 
-## 2. 发布首个版本
+## Automated release artifacts
 
-等待 CI 通过，再创建与 `src/codexbar.py` 中 VERSION 一致的 tag：
+The Release workflow rebuilds the project, runs tests, checks that the tag matches the version, and uploads:
+
+- `codexbar-lite-VERSION.tar.gz`: a source archive without local build products.
+- `SHA256SUMS`: the source archive's SHA-256 checksum.
+- `codexbar-lite.rb`: a formula containing the repository URL, version, and actual archive checksum.
+
+A failed build or test prevents publication. Keep `.build`, live quota responses, and authentication files out of the repository.
+
+## Update the Homebrew tap
+
+From your local `homebrew-codexbar-lite` checkout, download the formula for the new release:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+gh release download v0.1.1 --repo abinzzz/codexbar-lite \
+  --pattern codexbar-lite.rb --dir Formula --clobber
+git add Formula/codexbar-lite.rb
+git commit -m "Update codexbar-lite to 0.1.1"
+git push origin main
 ```
 
-Release workflow 会重新构建、测试、验证 tag，并发布：
+The default `GITHUB_TOKEN` in the source repository cannot write to the separate tap repository. Updating the tap is an explicit maintainer step.
 
-- `codexbar-lite-0.1.0.tar.gz`：源码安装包；不含本机构建产物。
-- `SHA256SUMS`：该源码包的 SHA-256。
-- `codexbar-lite.rb`：已填入当前仓库、版本和真实校验值的 Formula。
+The formula supports only Apple Silicon (M-series) Macs. It builds from source and requires Apple development tools; no prebuilt bottle is provided. Installation does not automatically modify SwiftBar preferences. Users enable the plugin with `codexbar-lite setup`.
 
-CI 失败不会发布。不要重复使用已发布 tag 或替换同一版本的归档，否则已安装 Formula 的校验值会失效。
+## Verify public installation
 
-## 3. 发布 Homebrew Tap
-
-在另一个空目录执行（使用相同账号）：
+After updating the tap, run the dedicated workflow:
 
 ```sh
-mkdir homebrew-codexbar-lite
-cd homebrew-codexbar-lite
-mkdir Formula
-gh release download v0.1.0 --repo abinzzz/codexbar-lite --pattern codexbar-lite.rb --dir Formula
-git init -b main
-git add Formula
-git commit -m "Add codexbar-lite 0.1.0"
-gh repo create abinzzz/homebrew-codexbar-lite --public --source . --remote origin --push
-brew install abinzzz/codexbar-lite/codexbar-lite
+gh workflow run homebrew.yml --repo abinzzz/codexbar-lite
+```
+
+It installs from the public tap and release on a clean M1 runner, runs `brew test`, verifies the ARM64 executable, and checks setup/uninstall in an isolated SwiftBar directory.
+
+For a local check:
+
+```sh
+brew upgrade codexbar-lite
 brew test abinzzz/codexbar-lite/codexbar-lite
 codexbar-lite doctor
 ```
 
-Formula 不在 Homebrew 安装阶段自动修改用户的 SwiftBar 设置。用户通过 `codexbar-lite setup` 完成启用。
+A live account check is optional and requires an existing Codex login:
 
-仅支持 Apple Silicon（M 系列）Mac。这是从源码构建的 Formula，首次安装需要 Apple 开发工具。没有预编译 bottle，也不需要把未经签名的可执行文件作为下载产物发布。
+```sh
+codexbar-lite doctor --live
+```
 
-## 手动生成发布产物
-
-不使用 GitHub Actions 时：
+## Generate artifacts manually
 
 ```sh
 make check
 python3 tools/release.py --repository abinzzz/codexbar-lite
 ```
 
-将 `dist/` 中的三个文件上传到 **v0.1.0** Release，再将 Formula 复制到 Tap。生成工具本身不会上传或修改仓库，必须使用实际仓库名生成。归档只包含明确列出的源码和文档，不包含用户配置。
-
-## 下一版本
-
-修改 VERSION 和 CHANGELOG，运行 `make check`，提交并推送新的 tag。下载新 Release 的 Formula，替换 Tap 中旧 Formula 并提交。用户即可运行 `brew upgrade codexbar-lite`。主仓库的默认 GITHUB_TOKEN 无法跨仓库自动写入 Tap，因此 Tap 更新是显式维护步骤。
+Upload the three files in `dist/` to the release tag matching `VERSION`, then copy the generated formula into the tap. The generator does not upload files or modify repositories. It archives an explicit set of source and documentation files and excludes user configuration.
