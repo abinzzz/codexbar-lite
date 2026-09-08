@@ -1,0 +1,34 @@
+class CodexbarLite < Formula
+  desc "Compact Codex quota monitor for the macOS menu bar"
+  homepage "https://github.com/@REPOSITORY@"
+  url "https://github.com/@REPOSITORY@/releases/download/v@VERSION@/codexbar-lite-@VERSION@.tar.gz"
+  sha256 "@SHA256@"
+  license "MIT"
+
+  depends_on macos: :ventura
+  depends_on "python@3.13"
+
+  def install
+    system Formula["python@3.13"].opt_bin/"python3.13", "tools/install.py",
+           "--prefix", prefix, "--launcher-prefix", opt_prefix,
+           "--python", Formula["python@3.13"].opt_bin/"python3.13"
+  end
+
+  def caveats
+    <<~EOS
+      Install SwiftBar and Codex if needed:
+        brew install --cask swiftbar codex
+      Then sign in and enable the plugin:
+        codex login
+        open -a SwiftBar
+        codexbar-lite setup
+      Before removing this formula, run:
+        codexbar-lite uninstall
+    EOS
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/codexbar-lite --version")
+    assert_match "image=", shell_output("#{bin}/codexbar-lite menu --demo")
+  end
+end
