@@ -1,4 +1,6 @@
 import importlib.util
+import io
+import selectors
 import json
 import os
 from pathlib import Path
@@ -10,6 +12,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+PREFIX = Path(os.environ.get("CODEXBAR_TEST_PREFIX", ROOT / ".build/install"))
 spec = importlib.util.spec_from_file_location("codexbar", ROOT / "src/codexbar.py")
 c = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(c)
@@ -59,8 +62,12 @@ class InstallTests(unittest.TestCase):
             launcher.chmod(0o755)
             path = c.setup(folder, launcher, "/path with space/codex")
             subprocess.run([str(path)], check=True)
-            self.assertEqual(output.read_text().splitlines(), ["menu", "--codex", "/path with space/codex"])
-            c.setup(folder, launcher)
+            self.assertEqual(output.read_text().splitlines(), ["stream", "--codex", "/path with space/codex"])
+            self.assertIn("<swiftbar.type>streamable</swiftbar.type>", path.read_text())
+            self.assertIn("<swiftbar.useTrailingStreamSeparator>true", path.read_text())
+            c.setup(folder, launcher, no_animation=True)
+            subprocess.run([str(path)], check=True)
+            self.assertEqual(output.read_text().splitlines(), ["stream", "--no-animation"])
             self.assertTrue(c.uninstall(folder))
             self.assertFalse(c.uninstall(folder))
 
@@ -129,11 +136,11 @@ time.sleep(10)
 
 
 class RendererTests(unittest.TestCase):
-    @unittest.skipUnless((ROOT / ".build/install/libexec/usage-renderer").exists(), "Run make check to build the renderer")
+    @unittest.skipUnless((PREFIX / "libexec/usage-renderer").exists(), "Run make check to build the renderer")
     def test_png_and_invalid_input(self):
         import base64
         import struct
-        renderer = ROOT / ".build/install/libexec/usage-renderer"
+        renderer = PREFIX / "libexec/usage-renderer"
         for appearance in ("Light", "Dark"):
             for values in ((52, 42), (100, 0), (None, None)):
                 data = json.dumps([{"label": "5h", "percent": values[0]}, {"label": "7d", "percent": values[1]}])
@@ -142,6 +149,131 @@ class RendererTests(unittest.TestCase):
                 self.assertEqual(struct.unpack(">II", png[16:24]), (240, 66))
         result = subprocess.run([str(renderer), "Light"], input="[]", text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
+
+
+class StartupTests(unittest.TestCase):
+    snapshot = {"primary": {"usedPercent": 0}, "secondary": {"usedPercent": 15}}
+
+    def test_ramp_monotonic_endpoints_and_unknown(self):
+        frames = c.startup_rows(self.snapshot)
+        self.assertEqual([r[1] for r in frames[0]], [0, 0])
+        self.assertEqual([r[1] for r in frames[-1]], [100, 85])
+        for index in (0, 1):
+            values = [frame[index][1] for frame in frames]
+            self.assertEqual(values, sorted(values))
+        frames = c.startup_rows({"primary": {"usedPercent": 50}})
+        self.assertTrue(all(frame[1][1] is None for frame in frames))
+        self.assertEqual(frames[-1][0][1], 50)
+
+    def test_one_second_after_prerender_with_authoritative_dropdown(self):
+        now = [0.0]
+        records = []
+        def render(frames, appearance):
+            now[0] += 2  # Slow preparation must not change playback duration.
+            return ["image" for _ in frames]
+        def sleep(delay):
+            now[0] += delay
+        with patch.object(c, "render_frames", side_effect=render):
+            c.animate_startup(self.snapshot, "Dark", lambda doc: records.append((now[0], doc)),
+                              clock=lambda: now[0], sleep=sleep)
+        self.assertEqual(len(records), 31)
+        self.assertAlmostEqual(records[-1][0] - records[0][0], 1.0)
+        self.assertIn("5h 0%", records[0][1])
+        self.assertIn("5h 100%", records[-1][1])
+        self.assertIn("7d 85%", records[-1][1])
+        self.assertIn("5h remaining: 100%", records[0][1])
+        self.assertIn("stdin=refresh", records[-1][1])
+        self.assertNotIn("refresh=true", records[-1][1])
+
+    def test_first_success_only_even_after_error_unknown_and_refresh(self):
+        from unittest.mock import Mock
+        fetch = Mock(side_effect=[c.UsageError("Not ready"), {}, self.snapshot, self.snapshot])
+        wait = Mock(side_effect=[True, True, True, False])
+        output = []
+        with patch.object(c, "animate_startup") as animation, patch.object(c, "render_image", side_effect=OSError):
+            c.run_stream(fetch, "Light", output.append, wait)
+        animation.assert_called_once()
+        self.assertIn("stdin=refresh", output[1])
+        self.assertIn("--%", output[2])
+        self.assertEqual(fetch.call_count, 4)
+        self.assertTrue(all(0 <= call.args[0] <= 60 for call in wait.call_args_list))
+
+    def test_disable_animation_and_zero_quota(self):
+        for snapshot, animate in [(self.snapshot, False), ({"primary": {"usedPercent": 100}}, True)]:
+            with patch.object(c, "animate_startup") as animation, patch.object(c, "render_image", side_effect=OSError):
+                c.run_stream(lambda: snapshot, "Light", lambda _: None, lambda _: False, animate=animate)
+            animation.assert_not_called()
+
+    def test_renderer_failure_falls_back_to_final_value(self):
+        output = []
+        with patch.object(c, "render_frames", side_effect=OSError), patch.object(c, "render_image", side_effect=OSError):
+            c.animate_startup(self.snapshot, "Light", output.append)
+        self.assertEqual(len(output), 1)
+        self.assertIn("5h 100%", output[0])
+
+    def test_complete_frame_separator(self):
+        output = io.StringIO()
+        with patch.object(sys, "stdout", output):
+            c.emit_frame("header\n---\nmenu")
+        self.assertEqual(output.getvalue(), "header\n---\nmenu\n~~~\n")
+
+    def test_refresh_input_fragment_timer_and_eof(self):
+        reader_fd, writer_fd = os.pipe()
+        with os.fdopen(reader_fd, "rb", buffering=0) as reader:
+            control = c.RefreshInput(reader)
+            try:
+                os.write(writer_fd, b"ref")
+                self.assertTrue(control.wait(.01))  # Timer can fire on partial input.
+                os.write(writer_fd, b"resh\n")
+                self.assertTrue(control.wait(1))
+                os.close(writer_fd)
+                self.assertFalse(control.wait(1))
+            finally:
+                control.close()
+
+    @unittest.skipUnless((PREFIX / "libexec/usage-renderer").exists(), "Build renderer first")
+    def test_batch_frames_match_single_frame_renderer(self):
+        with patch.object(c, "renderer_path", return_value=PREFIX / "libexec/usage-renderer"):
+            for appearance in ("Light", "Dark"):
+                rows = c.startup_rows(self.snapshot)
+                images = c.render_frames(rows, appearance)
+                self.assertEqual(images[0], c.render_image(rows[0], appearance))
+                self.assertEqual(images[-1], c.render_image(rows[-1], appearance))
+                self.assertNotEqual(images[0], images[-1])
+
+    @unittest.skipUnless((PREFIX / "bin/codexbar-lite").exists(), "Build CLI first")
+    def test_stream_process_manual_refresh_and_shutdown(self):
+        with subprocess.Popen([str(PREFIX / "bin/codexbar-lite"), "stream", "--demo", "--no-animation"],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            selector = selectors.DefaultSelector()
+            selector.register(proc.stdout, selectors.EVENT_READ)
+            pending = bytearray()
+            def receive():
+                deadline = time.monotonic() + 10
+                while b"\n~~~\n" not in pending:
+                    self.assertGreater(deadline, time.monotonic(), "Stream frame timeout")
+                    if selector.select(.1):
+                        data = os.read(proc.stdout.fileno(), 65536)
+                        self.assertTrue(data, "Unexpected EOF")
+                        pending.extend(data)
+                frame, _, rest = pending.partition(b"\n~~~\n")
+                pending[:] = rest
+                return frame.decode()
+            try:
+                self.assertIn("Loading", receive())
+                first = receive()
+                self.assertIn("5h 52%", first)
+                self.assertIn("image=", first)
+                proc.stdin.write(b"refresh\n")
+                proc.stdin.flush()
+                self.assertEqual(receive(), first)  # Refresh emits one final frame, without loading/ramp.
+                proc.stdin.close()
+                self.assertEqual(proc.wait(timeout=3), 0)
+            finally:
+                selector.close()
+                if proc.poll() is None:
+                    proc.terminate()
+                    proc.wait(timeout=3)
 
 
 if __name__ == '__main__':

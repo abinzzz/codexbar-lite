@@ -4,7 +4,7 @@
 
 ## Installation
 
-Requires an Apple Silicon Mac, macOS 13 or later, SwiftBar, and the Codex CLI signed in with a supported ChatGPT account. Source builds require Apple Command Line Tools (`xcode-select --install`) or Xcode, plus Python 3.10 or later. Homebrew installs the Python dependency.
+Requires an Apple Silicon Mac, macOS 13 or later, SwiftBar 2.1.1 or later, and the Codex CLI signed in with a supported ChatGPT account. Source builds require Apple Command Line Tools (`xcode-select --install`) or Xcode, plus Python 3.10 or later. Homebrew installs the Python dependency.
 
 ### Homebrew
 
@@ -25,7 +25,7 @@ To choose a directory explicitly:
 codexbar-lite setup --plugin-dir "$HOME/SwiftBar Plugins"
 ```
 
-Select the same directory in SwiftBar. The plugin refreshes every minute.
+Select the same directory in SwiftBar. The streaming plugin refreshes every minute.
 
 Source: [abinzzz/codexbar-lite](https://github.com/abinzzz/codexbar-lite). Tap: [abinzzz/homebrew-codexbar-lite](https://github.com/abinzzz/homebrew-codexbar-lite).
 
@@ -39,6 +39,20 @@ python3 tools/install.py --prefix "$HOME/.local"
 ```
 
 Add `$HOME/.local/bin` to your shell's `PATH` to use the command by name. The generated plugin uses absolute paths and does not depend on SwiftBar loading your shell configuration.
+
+## Startup animation
+
+After the first successful quota response, both known percentages count up from zero to their current remaining values, and the bars fill in sync. Playback takes approximately one second, with 31 pre-rendered frames. Network lookup time occurs before playback.
+
+The animation runs once per plugin process. Timer updates and the menu's Refresh action update directly; restarting or re-enabling the plugin plays the animation again. Missing windows stay at `--%`, and unavailable data is never animated as zero.
+
+macOS Reduce Motion is respected. To disable animation explicitly:
+
+```sh
+codexbar-lite setup --no-animation
+```
+
+Run `codexbar-lite setup` again without that flag to restore the default behavior. To preview the stream without an account, run `codexbar-lite stream --demo` and press Ctrl+C when finished.
 
 ## Usage
 
@@ -72,7 +86,8 @@ codexbar-lite status --codex /absolute/path/to/codex
 
 ```sh
 brew upgrade codexbar-lite
-# No additional setup is needed: the plugin uses Homebrew's stable opt path.
+# When upgrading from 0.1.x, run setup once to switch to streaming.
+codexbar-lite setup
 
 codexbar-lite uninstall
 brew uninstall codexbar-lite

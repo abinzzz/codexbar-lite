@@ -1,15 +1,16 @@
 # Architecture
 
 ```text
-SwiftBar (every 1 minute)
+SwiftBar (streaming plugin host)
   → managed shell plugin
   → stable codexbar-lite launcher
-  → Python standard-library JSON-RPC client
+  → Python streaming loop (60-second polling / stdin refresh)
+  → standard-library JSON-RPC client
   → local Codex app-server → account service
   → AppKit PNG renderer → SwiftBar menu
 ```
 
-Python uses only the standard library. The Swift/AppKit renderer is compiled during installation, so refreshes do not invoke the compiler. Each quota request has a 15-second timeout; rendering has a 5-second timeout. Child processes are reaped, and the client keeps no persistent connection or local quota cache.
+Python uses only the standard library. The Swift/AppKit renderer is compiled during installation, so refreshes do not invoke the compiler. Each quota request has a 15-second timeout; rendering has a 5-second timeout. The Python plugin process stays alive under SwiftBar supervision and sleeps while waiting for the next poll or stdin action. Child processes are reaped, and the client keeps no persistent connection or local quota cache.
 
 The JSON-RPC sequence is `initialize` → `initialized` → `account/rateLimits/read`. The reader buffers bytes and splits complete lines, avoiding an unbounded `readline()` wait on a partial message. It handles both fragmented messages and multiple lines in one read. For multi-bucket responses, it selects the `codex` bucket and does not substitute another product's limits.
 
@@ -32,3 +33,11 @@ swift tools/generate-demo.swift .build/install/libexec/usage-renderer docs
 ```
 
 The generator uses AppKit and ImageIO, adds an opaque appearance-matched background for smooth GIF text, and never requests account data.
+
+## Startup animation
+
+The shell wrapper declares `swiftbar.type=streamable` and `swiftbar.useTrailingStreamSeparator=true`. Each complete menu frame is flushed with a trailing `~~~` separator, so SwiftBar can commit the frame even when a PNG spans multiple pipe reads. The native renderer supports batch input, preparing all 31 PNG frames in one process before the one-second monotonic-clock playback starts.
+
+The initial loading state displays unknown quota. The first successful response with known values triggers interpolation; missing windows stay unknown. The dropdown always contains authoritative quota values while the menu-bar image animates. Subsequent polls and `stdin=refresh` actions skip animation. The loop sleeps with a selector, exits on stdin EOF, and handles SIGTERM so an in-flight quota subprocess can be reaped.
+
+Animation is skipped when macOS Reduce Motion is enabled, `--no-animation` is requested, or all known quota values are zero. If batch rendering fails, the plugin shows the final menu directly.

@@ -29,6 +29,7 @@
 
 A small [SwiftBar](https://github.com/swiftbar/SwiftBar) plugin that keeps your remaining Codex quota in the menu bar. Built for **Apple Silicon Macs running macOS 13 or later**.
 
+- **A smooth start.** A one-second count-up fills the bars to your current quota when the plugin loads.
 - **Know what's left.** Remaining percentages, compact progress bars, and local reset times.
 - **Use your existing login.** Connects through the Codex CLI; no separate API key or backend.
 - **Keep it simple.** Refreshes every minute. Missing data stays unknown, and setup preserves your other plugins.
@@ -42,7 +43,7 @@ brew install abinzzz/codexbar-lite/codexbar-lite
 codexbar-lite setup
 ```
 
-Requires current Apple Command Line Tools or Xcode. Homebrew installs Python for you.
+Requires SwiftBar 2.1.1 or later and current Apple Command Line Tools or Xcode. Homebrew installs Python for you.
 
 <details>
 <summary>First time using SwiftBar or Codex?</summary>
@@ -78,6 +79,8 @@ python3 tools/install.py --prefix "$HOME/.local"
 | `codexbar-lite menu --demo` | Render a sample without signing in. |
 | `brew upgrade codexbar-lite` | Install the latest version. |
 
+Upgrading from 0.1.x? Run `codexbar-lite setup` once after upgrading to enable streaming. Later upgrades keep the same launcher.
+
 To remove the plugin and package:
 
 ```sh
@@ -89,7 +92,7 @@ For custom paths, quota colors, and troubleshooting, see the [user guide](docs/U
 
 ## Under the hood
 
-Python's standard library handles the local Codex app-server connection. A small Swift/AppKit renderer draws the menu bar image. SwiftBar handles scheduling.
+Python's standard library handles the local Codex app-server connection. A small Swift/AppKit renderer draws the menu bar image. SwiftBar hosts the streaming plugin, which polls account limits every minute.
 
 The plugin reuses your Codex CLI login and makes no direct reads of authentication files. It sends no analytics. The Codex CLI connects to its account service to fetch limits.
 

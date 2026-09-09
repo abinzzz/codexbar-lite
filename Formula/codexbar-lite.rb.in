@@ -23,6 +23,7 @@ class CodexbarLite < Formula
         codex login
         open -a SwiftBar
         codexbar-lite setup
+      Upgrading from 0.1.x? Run codexbar-lite setup once to enable streaming.
       Before removing this formula, run:
         codexbar-lite uninstall
     EOS
@@ -31,5 +32,8 @@ class CodexbarLite < Formula
   test do
     assert_match version.to_s, shell_output("#{bin}/codexbar-lite --version")
     assert_match "image=", shell_output("#{bin}/codexbar-lite menu --demo")
+    stream = pipe_output("#{bin}/codexbar-lite stream --demo --no-animation", "", 0)
+    assert_match "stdin=refresh", stream
+    assert_match "~~~", stream
   end
 end

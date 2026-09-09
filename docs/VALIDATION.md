@@ -20,3 +20,9 @@ Local Homebrew installation was blocked by an outdated Xcode 15.2 installation. 
 ## Version 0.1.1
 
 This release standardizes all current project documentation in English. Runtime messages, source comments, workflows, the license, tap documentation, and release notes were already in English. The source tree is checked for remaining CJK text before publication. Historical release archives are retained unchanged.
+
+## Version 0.2.0
+
+- 20 local tests passed, including startup interpolation, one-second scheduling, delayed data recovery, no replay on refresh, disabled animation, fallback rendering, complete stream frames, stdin actions, native batch equivalence, and process shutdown.
+- A real native-renderer playback emitted 31 frames over approximately 1.003 seconds. The first, middle, and final images were inspected at 0/0%, 50/42%, and 100/85%.
+- The Homebrew formula now exercises a complete streaming response in addition to the static demo.
