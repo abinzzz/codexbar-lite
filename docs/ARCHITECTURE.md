@@ -34,10 +34,10 @@ swift tools/generate-demo.swift .build/install/libexec/usage-renderer docs
 
 The generator uses AppKit and ImageIO, adds an opaque appearance-matched background for smooth GIF text, and never requests account data.
 
-## Startup animation
+## Startup and reset animations
 
 The shell wrapper declares `swiftbar.type=streamable` and `swiftbar.useTrailingStreamSeparator=true`. Each complete menu frame is flushed with a trailing `~~~` separator, so SwiftBar can commit the frame even when a PNG spans multiple pipe reads. The native renderer supports batch input, preparing all 31 PNG frames in one process before the one-second monotonic-clock playback starts.
 
-The initial loading state displays unknown quota. The first successful response with known values triggers interpolation; missing windows stay unknown. The dropdown always contains authoritative quota values while the menu-bar image animates. Subsequent polls and `stdin=refresh` actions skip animation. The loop sleeps with a selector, exits on stdin EOF, and handles SIGTERM so an in-flight quota subprocess can be reaped.
+The initial loading state displays unknown quota. Each window's first known value triggers interpolation; missing windows stay unknown. The dropdown always contains authoritative quota values while the menu-bar image animates. Per-window reset deadlines shorten the normal polling wait. Once a deadline passes, that window animates on its next known response; the other row stays unchanged. Consumed deadlines are cleared and only future timestamps are armed, preventing repeated animation from stale responses. Ordinary polls and `stdin=refresh` actions skip animation unless a window is pending. Failed requests retain pending resets and use the normal retry interval. The loop sleeps with a selector, exits on stdin EOF, and handles SIGTERM so an in-flight quota subprocess can be reaped.
 
 Animation is skipped when macOS Reduce Motion is enabled, `--no-animation` is requested, or all known quota values are zero. If batch rendering fails, the plugin shows the final menu directly.

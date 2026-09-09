@@ -204,6 +204,54 @@ class StartupTests(unittest.TestCase):
                 c.run_stream(lambda: snapshot, "Light", lambda _: None, lambda _: False, animate=animate)
             animation.assert_not_called()
 
+    def test_reset_frames_leave_other_window_unchanged(self):
+        for index in (0, 1):
+            frames = c.startup_rows(self.snapshot, (index,))
+            self.assertEqual(frames[0][index][1], 0)
+            self.assertEqual(frames[-1][index][1], [100, 85][index])
+            self.assertTrue(all(frame[1 - index][1] == [100, 85][1 - index] for frame in frames))
+
+    def run_timeline(self, events, *, animate=True):
+        now = [0]
+        event_count = len(events)
+        events = iter(events)
+        waits = []
+        def fetch():
+            now[0], result = next(events)
+            if isinstance(result, Exception):
+                raise result
+            return result
+        def wait(delay):
+            waits.append(delay)
+            return len(waits) < event_count
+        with patch.object(c, "animate_startup") as animation, patch.object(c, "render_image", side_effect=OSError):
+            c.run_stream(fetch, "Light", lambda _: None, wait, animate=animate,
+                         clock=lambda: 0, wall_clock=lambda: now[0])
+        return [call.kwargs["animated_rows"] for call in animation.call_args_list], waits
+
+    def test_independent_resets_and_stale_timestamp_do_not_repeat(self):
+        snapshot = {"primary": {"usedPercent": 10, "resetsAt": 10},
+                    "secondary": {"usedPercent": 20, "resetsAt": 20}}
+        calls, waits = self.run_timeline([(0, snapshot), (10, snapshot), (11, snapshot),
+                                          (20, snapshot), (21, snapshot)])
+        self.assertEqual(calls, [(0, 1), (0,), (1,)])
+        self.assertEqual(waits[:3], [10, 10, 9])
+
+    def test_reset_survives_failure_and_missing_data(self):
+        initial = {"primary": {"usedPercent": 10, "resetsAt": 10}}
+        renewed = {"primary": {"usedPercent": 5, "resetsAt": 100}}
+        calls, waits = self.run_timeline([(0, initial), (10, c.UsageError("Offline")),
+                                          (70, {}), (80, renewed), (100, renewed)])
+        self.assertEqual(calls, [(0,), (0,), (0,)])
+        self.assertEqual(waits[1], 60)
+
+    def test_simultaneous_resets_and_disabled_animation(self):
+        snapshot = {key: {"usedPercent": 15, "resetsAt": 10}
+                    for key in ("primary", "secondary")}
+        for enabled in (True, False):
+            calls, _ = self.run_timeline([(0, snapshot), (10, snapshot)], animate=enabled)
+            self.assertEqual(calls, [(0, 1), (0, 1)] if enabled else [])
+
     def test_renderer_failure_falls_back_to_final_value(self):
         output = []
         with patch.object(c, "render_frames", side_effect=OSError), patch.object(c, "render_image", side_effect=OSError):

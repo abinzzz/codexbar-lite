@@ -40,11 +40,13 @@ python3 tools/install.py --prefix "$HOME/.local"
 
 Add `$HOME/.local/bin` to your shell's `PATH` to use the command by name. The generated plugin uses absolute paths and does not depend on SwiftBar loading your shell configuration.
 
-## Startup animation
+## Startup and reset animations
 
 After the first successful quota response, both known percentages count up from zero to their current remaining values, and the bars fill in sync. Playback takes approximately one second, with 31 pre-rendered frames. Network lookup time occurs before playback.
 
-The animation runs once per plugin process. Timer updates and the menu's Refresh action update directly; restarting or re-enabling the plugin plays the animation again. Missing windows stay at `--%`, and unavailable data is never animated as zero.
+Each window animates when its first known value arrives and again after its reset time is reached. The plugin schedules a quota refresh at the reset time; only the affected window counts up, while the other stays at its current value. Simultaneous resets animate together. Ordinary timer updates and the menu's Refresh action update directly. Missing windows stay at `--%`, and unavailable data is never animated as zero.
+
+Reset playback uses the latest successful quota response, so network delays can postpone it. An expired reset timestamp triggers only once, even if the service keeps returning it. Restarting or re-enabling the plugin plays the startup animation again.
 
 macOS Reduce Motion is respected. To disable animation explicitly:
 
@@ -112,4 +114,3 @@ References: [Codex App Server](https://developers.openai.com/codex/app-server) a
 **Duplicate indicators:** When migrating from the original manual plugin, disable `chatgpt-usage.1m.py` in SwiftBar. Setup does not remove that older plugin automatically.
 
 **Build errors:** Install Apple development tools with `xcode-select --install`, then rebuild. If Homebrew reports an outdated Xcode installation, update that Xcode. Selecting Command Line Tools alone may not satisfy Homebrew's environment checks.
-

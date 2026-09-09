@@ -16,23 +16,31 @@
 
 <br>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/demo-dark.gif">
-    <img src="docs/demo-light.gif" width="288" alt="Animated Codex quota demo: 5h decreases from 100% to 0% while 7d decreases from 100% to 85%">
-  </picture>
-</p>
+<table align="center">
+  <tr>
+    <th>Startup</th>
+    <th>5h reset</th>
+    <th>7d reset</th>
+  </tr>
+  <tr>
+    <td><picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/startup-dark.gif">
+      <img src="docs/startup.gif" width="288" alt="Startup: both remaining quota percentages count up from zero in one second">
+    </picture></td>
+    <td><picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/5h-reset-dark.gif">
+      <img src="docs/5h-reset.gif" width="288" alt="5h reset: the 5h percentage counts up in one second while 7d stays unchanged">
+    </picture></td>
+    <td><picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/7d-reset-dark.gif">
+      <img src="docs/7d-reset.gif" width="288" alt="7d reset: the 7d percentage counts up in one second while 5h stays unchanged">
+    </picture></td>
+  </tr>
+</table>
 
-<p align="center"><sub>5h: 100% → 0% &nbsp;·&nbsp; 7d: 100% → 85%<br>Illustrative demo at 3× size. Actual quota windows vary independently.</sub></p>
+<p align="center">A lightweight <a href="https://github.com/swiftbar/SwiftBar">SwiftBar</a> plugin that shows your remaining Codex quota and reset times in the macOS menu bar.</p>
 
 <br>
-
-A small [SwiftBar](https://github.com/swiftbar/SwiftBar) plugin that keeps your remaining Codex quota in the menu bar. Built for **Apple Silicon Macs running macOS 13 or later**.
-
-- **A smooth start.** A one-second count-up fills the bars to your current quota when the plugin loads.
-- **Know what's left.** Remaining percentages, compact progress bars, and local reset times.
-- **Use your existing login.** Connects through the Codex CLI; no separate API key or backend.
-- **Keep it simple.** Refreshes every minute. Missing data stays unknown, and setup preserves your other plugins.
 
 ## Install
 
@@ -43,7 +51,7 @@ brew install abinzzz/codexbar-lite/codexbar-lite
 codexbar-lite setup
 ```
 
-Requires SwiftBar 2.1.1 or later and current Apple Command Line Tools or Xcode. Homebrew installs Python for you.
+Requires an Apple Silicon Mac running macOS 13 or later, SwiftBar 2.1.1 or later, and current Apple Command Line Tools or Xcode. Homebrew installs Python for you.
 
 <details>
 <summary>First time using SwiftBar or Codex?</summary>

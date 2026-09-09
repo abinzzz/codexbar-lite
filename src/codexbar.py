@@ -178,11 +178,13 @@ def menu(snapshot, appearance, *, image=None, frame_rows=None, stream=False):
     return "\n".join(output)
 
 
-def startup_rows(snapshot):
-    """Keep missing windows unknown and interpolate both known values together."""
+def startup_rows(snapshot, animated_rows=(0, 1)):
+    """Interpolate selected windows while keeping other values unchanged."""
     targets = windows(snapshot)
-    return [[(title, None if value is None else round(value * step / ANIMATION_STEPS), window)
-             for title, value, window in targets] for step in range(ANIMATION_STEPS + 1)]
+    return [[(title, round(value * step / ANIMATION_STEPS)
+              if index in animated_rows and value is not None else value, window)
+             for index, (title, value, window) in enumerate(targets)]
+            for step in range(ANIMATION_STEPS + 1)]
 
 
 def render_frames(frames, appearance):
@@ -211,8 +213,9 @@ def emit_frame(document):
     sys.stdout.flush()
 
 
-def animate_startup(snapshot, appearance, emit, *, clock=time.monotonic, sleep=time.sleep):
-    frames = startup_rows(snapshot)
+def animate_startup(snapshot, appearance, emit, *, animated_rows=(0, 1),
+                    clock=time.monotonic, sleep=time.sleep):
+    frames = startup_rows(snapshot, animated_rows)
     try:
         images = render_frames(frames, appearance)
         documents = [menu(snapshot, appearance, image=image, frame_rows=rows, stream=True)
@@ -275,26 +278,45 @@ def error_menu(error, *, stream=False):
             " | size=11\n---\nRetry | " + ("stdin=refresh" if stream else "refresh=true"))
 
 
-def run_stream(fetch, appearance, emit, wait, *, animate=True, clock=time.monotonic):
+def run_stream(fetch, appearance, emit, wait, *, animate=True, clock=time.monotonic,
+               wall_clock=time.time):
     emit("Codex -- | size=11\n---\nLoading Codex quota… | size=13")
-    startup_pending = True
+    pending = [True, True]
+    deadlines = [None, None]
     while True:
         started = clock()
+        fetched = False
         try:
             snapshot = fetch()
-            values = [value for _, value, _ in windows(snapshot)]
-            known = any(value is not None for value in values)
-            if startup_pending and known:
-                if animate and any(value is not None and value > 0 for value in values):
-                    animate_startup(snapshot, appearance, emit)
-                else:
-                    emit(menu(snapshot, appearance, stream=True))
-                startup_pending = False
+            fetched = True
+            now = wall_clock()
+            animated_rows = []
+            for index, (_, value, window) in enumerate(windows(snapshot)):
+                if deadlines[index] is not None and deadlines[index] <= now:
+                    pending[index] = True
+                    deadlines[index] = None
+                timestamp = window.get("resetsAt") if isinstance(window, dict) else None
+                # Ignore expired server timestamps so a reset cannot replay on every poll.
+                if (isinstance(timestamp, (int, float)) and not isinstance(timestamp, bool)
+                        and math.isfinite(timestamp) and timestamp > now):
+                    deadlines[index] = timestamp
+                if pending[index] and value is not None:
+                    if value > 0:
+                        animated_rows.append(index)
+                    pending[index] = False
+            if animate and animated_rows:
+                animate_startup(snapshot, appearance, emit, animated_rows=tuple(animated_rows))
             else:
                 emit(menu(snapshot, appearance, stream=True))
         except (UsageError, OSError, ValueError, subprocess.SubprocessError) as error:
             emit(error_menu(error, stream=True))
-        if not wait(max(0, REFRESH_SECONDS - (clock() - started))):
+        timeout = max(0, REFRESH_SECONDS - (clock() - started))
+        now = wall_clock()
+        future = [max(0, deadline - now) for deadline in deadlines
+                  if deadline is not None and (fetched or deadline > now)]
+        if future:
+            timeout = min(timeout, min(future))
+        if not wait(timeout):
             break
 
 
@@ -366,7 +388,7 @@ def main(argv=None):
         if name == "doctor":
             command.add_argument("--live", action="store_true", help="Also request live account limits")
         if name == "stream":
-            command.add_argument("--no-animation", action="store_true", help="Skip the startup animation")
+            command.add_argument("--no-animation", action="store_true", help="Skip startup and reset animations")
         if name in ("menu", "stream"):
             command.add_argument("--demo", action="store_true", help="Render synthetic 52% / 42% data without Codex")
     for name in ("setup", "uninstall"):
@@ -374,7 +396,7 @@ def main(argv=None):
         command.add_argument("--plugin-dir")
         if name == "setup":
             command.add_argument("--codex")
-            command.add_argument("--no-animation", action="store_true", help="Skip the startup animation")
+            command.add_argument("--no-animation", action="store_true", help="Skip startup and reset animations")
     args = parser.parse_args(argv)
     try:
         if args.command == "setup":
