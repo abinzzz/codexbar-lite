@@ -20,3 +20,15 @@ Missing quota values remain unknown. Window labels use the returned durations; `
 The menu bar image is a transparent 240 × 66-pixel PNG displayed at 80 × 22 pt. The system font is approximately 10 pt; `100%` uses a slightly smaller size to prevent clipping. Empty segments adjust their color and opacity for light and dark appearances.
 
 Only Apple Silicon Macs are supported. The installer requires a native ARM64 environment and compiles the renderer for `arm64-apple-macos13.0`.
+
+## README animation
+
+The light and dark GIFs use the production renderer with synthetic inputs. Over 101 frames, the 5-hour window decreases from 100% to 0%, while the weekly window decreases from 100% to 85%. This is an illustrative scenario, not a fixed relationship between quota windows. Each loop pauses at both endpoints.
+
+After `make build`, regenerate the assets with:
+
+```sh
+swift tools/generate-demo.swift .build/install/libexec/usage-renderer docs
+```
+
+The generator uses AppKit and ImageIO, adds an opaque appearance-matched background for smooth GIF text, and never requests account data.

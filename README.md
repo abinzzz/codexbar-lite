@@ -18,12 +18,12 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
-    <img src="docs/preview-light.png" width="240" alt="Codex quota preview: 5h 52% and 7d 42% remaining">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/demo-dark.gif">
+    <img src="docs/demo-light.gif" width="288" alt="Animated Codex quota demo: 5h decreases from 100% to 0% while 7d decreases from 100% to 85%">
   </picture>
 </p>
 
-<p align="center"><sub>Native macOS typography. Light and dark appearances.<br>Synthetic preview at 3× size; the menu bar item is 80 × 22 pt.</sub></p>
+<p align="center"><sub>5h: 100% → 0% &nbsp;·&nbsp; 7d: 100% → 85%<br>Illustrative demo at 3× size. Actual quota windows vary independently.</sub></p>
 
 <br>
 
