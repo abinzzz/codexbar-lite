@@ -10,33 +10,19 @@
 
 <p align="center">
   <a href="#install">Install</a> ·
+  <a href="#demo">Demo</a> ·
   <a href="docs/USAGE.md">User guide</a> ·
   <a href="https://github.com/abinzzz/codexbar-lite/releases">Releases</a>
 </p>
 
 <br>
 
-<table align="center">
-  <tr>
-    <th>Startup</th>
-    <th>5h reset</th>
-    <th>7d reset</th>
-  </tr>
-  <tr>
-    <td><picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/startup-dark.gif">
-      <img src="docs/startup.gif" width="288" alt="Startup: both remaining quota percentages count up from zero in one second">
-    </picture></td>
-    <td><picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/5h-reset-dark.gif">
-      <img src="docs/5h-reset.gif" width="288" alt="5h reset: the 5h percentage counts up in one second while 7d stays unchanged">
-    </picture></td>
-    <td><picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/7d-reset-dark.gif">
-      <img src="docs/7d-reset.gif" width="288" alt="7d reset: the 7d percentage counts up in one second while 5h stays unchanged">
-    </picture></td>
-  </tr>
-</table>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/startup-dark.gif">
+    <img src="docs/startup.gif" width="288" alt="Startup: both remaining quota percentages count up from zero in one second">
+  </picture>
+</p>
 
 <p align="center">A lightweight <a href="https://github.com/swiftbar/SwiftBar">SwiftBar</a> plugin that shows your remaining Codex quota and reset times in the macOS menu bar.</p>
 
@@ -77,6 +63,30 @@ python3 tools/install.py --prefix "$HOME/.local"
 ```
 
 </details>
+
+## Demo
+
+<table align="center">
+  <tr>
+    <th>Startup</th>
+    <th>5h reset</th>
+    <th>7d reset</th>
+  </tr>
+  <tr>
+    <td><picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/startup-dark.gif">
+      <img src="docs/startup.gif" width="288" alt="Startup: both remaining quota percentages count up from zero in one second">
+    </picture></td>
+    <td><picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/5h-reset-dark.gif">
+      <img src="docs/5h-reset.gif" width="288" alt="5h reset: the 5h percentage counts up in one second while 7d stays unchanged">
+    </picture></td>
+    <td><picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/7d-reset-dark.gif">
+      <img src="docs/7d-reset.gif" width="288" alt="7d reset: the 7d percentage counts up in one second while 5h stays unchanged">
+    </picture></td>
+  </tr>
+</table>
 
 ## Everyday commands
 
